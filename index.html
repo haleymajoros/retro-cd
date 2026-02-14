@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DiscSpin 95</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://sdk.scdn.co/spotify-player.js"></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <div class="wrap">
+        <header class="topbar">
+          <div>
+            <h1>CD PLAYER</h1>
+            <p>Spotify Integration - Retro Edition</p>
+          </div>
+          <button id="authBtn" class="auth">Connect Spotify</button>
+        </header>
+
+        <section class="player-panel" aria-label="CD player">
+          <div class="lcd" role="status" aria-live="polite">
+            <div class="lcd-topline">
+              <span id="lcdMode">STOP</span>
+              <span id="lcdTrack">TRK --</span>
+              <span id="lcdTime">--:--</span>
+            </div>
+            <div id="lcdAlbum" class="lcd-album">No CD inserted</div>
+            <div id="lcdArtist" class="lcd-artist">Connect Spotify to start</div>
+          </div>
+
+          <div class="deck-row">
+            <ol id="trackList" class="track-list" aria-label="Album tracks" hidden></ol>
+          </div>
+
+          <div class="transport" aria-label="CD controls">
+            <button data-action="prev" disabled>
+              <span class="glyph">|&lt;&lt;</span>
+              <span>Prev</span>
+            </button>
+            <button id="playToggleBtn" data-action="play" disabled>
+              <span id="playToggleGlyph" class="glyph">▶</span>
+              <span id="playToggleLabel">Play</span>
+            </button>
+            <button data-action="next" disabled>
+              <span class="glyph">&gt;&gt;|</span>
+              <span>Next</span>
+            </button>
+          </div>
+
+          <div class="slot-row">
+            <div id="cdSlot" class="cd-slot">INSERT CD HERE</div>
+            <button data-action="eject" class="eject" disabled>Eject</button>
+          </div>
+        </section>
+
+        <section class="library-panel" aria-label="CD library">
+          <div class="library-header">
+            <h2>Library</h2>
+            <div class="search-row">
+              <input id="albumSearch" placeholder="Search albums or artist" />
+              <button id="searchBtn" class="secondary">Search</button>
+            </div>
+          </div>
+          <ul id="searchResults" class="search-results" aria-label="Album search results"></ul>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

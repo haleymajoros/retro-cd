@@ -1,0 +1,364 @@
+:root {
+  --bg: #e8e5dc;
+  --ink: #101010;
+  --soft: #f5f4ef;
+  --panel: #f3f0e4;
+  --disc: #cbcbcb;
+  --disc-edge: #8f8f8f;
+  --lcd-bg: #a9b899;
+  --lcd-ink: #2a3725;
+  --danger: #7d2d2d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "IBM Plex Mono", monospace;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 8% 10%, rgba(255, 255, 255, 0.6), transparent 35%),
+    radial-gradient(circle at 90% 16%, rgba(0, 0, 0, 0.07), transparent 40%),
+    var(--bg);
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.wrap {
+  width: min(980px, 100%);
+  display: grid;
+  gap: 1.25rem;
+}
+
+.topbar {
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+}
+
+h1,
+h2 {
+  margin: 0;
+  font-family: "Archivo Black", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.topbar p {
+  margin: 0;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  opacity: 0.65;
+}
+
+.player-panel,
+.library-panel {
+  border: 4px solid var(--ink);
+  border-radius: 28px;
+  background: var(--panel);
+  padding: 1rem;
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.25);
+}
+
+.library-panel {
+  border-radius: 22px;
+}
+
+.lcd {
+  border: 3px solid #6f7a68;
+  background: var(--lcd-bg);
+  color: var(--lcd-ink);
+  border-radius: 18px;
+  padding: 0.72rem;
+  margin-bottom: 0.9rem;
+}
+
+.lcd-topline {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.lcd-album,
+.lcd-artist {
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.deck-row {
+  display: block;
+}
+
+.disc-spinning {
+  animation: spin 2s linear infinite;
+}
+
+.track-list {
+  margin: 0;
+  list-style: none;
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  background: var(--soft);
+  min-height: 300px;
+  padding: 0.9rem 1rem;
+  max-height: 300px;
+  overflow: auto;
+}
+
+.track-list li {
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.track-list li.active {
+  font-weight: 700;
+}
+
+.track-list[hidden] {
+  display: none;
+}
+
+.transport {
+  margin-top: 0.95rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(70px, 1fr));
+  gap: 0.6rem;
+}
+
+button {
+  border: 3px solid var(--ink);
+  background: #fff;
+  color: var(--ink);
+  font-family: inherit;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+button:active {
+  transform: translateY(2px);
+}
+
+button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.transport button {
+  border-radius: 999px;
+  padding: 0.55rem 0.25rem;
+  display: grid;
+  justify-items: center;
+  gap: 0.12rem;
+}
+
+.glyph {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.auth {
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  background: #d8db96;
+}
+
+.slot-row {
+  margin-top: 0.95rem;
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+}
+
+.cd-slot {
+  flex: 1;
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  height: 62px;
+  display: grid;
+  place-items: center;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.73rem;
+  font-weight: 700;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.04),
+      rgba(0, 0, 0, 0.04) 8px,
+      rgba(255, 255, 255, 0.22) 8px,
+      rgba(255, 255, 255, 0.22) 16px
+    ),
+    linear-gradient(180deg, #c8c8c8, #a8a8a8);
+  transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+}
+
+.cd-slot.drag-over {
+  transform: scale(1.015);
+  box-shadow: inset 0 0 0 4px rgba(24, 24, 24, 0.25);
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.06),
+      rgba(0, 0, 0, 0.06) 8px,
+      rgba(255, 255, 255, 0.28) 8px,
+      rgba(255, 255, 255, 0.28) 16px
+    ),
+    linear-gradient(180deg, #d3d3d3, #b5b5b5);
+}
+
+.eject,
+.secondary {
+  border-radius: 999px;
+  padding: 0.7rem 1rem;
+}
+
+.library-header {
+  display: grid;
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
+}
+
+.search-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+input {
+  flex: 1;
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+  padding: 0.65rem 0.95rem;
+  font-family: inherit;
+  background: #fff;
+}
+
+.search-results {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.8rem;
+}
+
+.search-results li {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+}
+
+.disc-select {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 4px solid var(--ink);
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(circle at 24% 22%, #f2f2f2, #bfbfbf 60%, #9d9d9d);
+  padding: 0;
+  transition: transform 120ms ease;
+}
+
+.disc-select:active {
+  transform: scale(0.98);
+}
+
+.disc-select.dragging {
+  opacity: 0.6;
+}
+
+.disc-select.current-cd {
+  box-shadow: 0 0 0 3px #111, 0 0 0 8px rgba(255, 255, 255, 0.65);
+}
+
+.disc-select.current-cd-spinning {
+  animation: spin 1.9s linear infinite;
+}
+
+.disc-select img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.82;
+}
+
+.disc-select::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 34%;
+  height: 34%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid #000;
+}
+
+.album-name,
+.album-artist {
+  width: 100%;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.album-name {
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.album-artist {
+  font-size: 0.68rem;
+  opacity: 0.75;
+}
+
+.note {
+  color: var(--danger);
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  opacity: 0.6;
+  font-size: 0.82rem;
+  padding: 0.8rem 0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 760px) {
+  .transport {
+    grid-template-columns: repeat(3, minmax(70px, 1fr));
+  }
+
+  .search-results {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
+
+  .cd-slot {
+    font-size: 0.65rem;
+  }
+}
