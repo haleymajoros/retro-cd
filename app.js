@@ -1,5 +1,5 @@
 const SPOTIFY_CLIENT_ID = "1fc2d3fa12034bb283fc7e8a72b5d9ba";
-const REDIRECT_URI = "http://127.0.0.1:5500/";
+const REDIRECT_URI = `${window.location.origin}/`;
 const SCOPES = [
   "streaming",
   "user-read-email",
@@ -119,8 +119,8 @@ async function generateCodeChallenge(verifier) {
 }
 
 function getTokenFromStorage() {
-  const token = sessionStorage.getItem(STORAGE.token);
-  const expiry = Number(sessionStorage.getItem(STORAGE.tokenExpiry));
+  const token = localStorage.getItem(STORAGE.token);
+  const expiry = Number(localStorage.getItem(STORAGE.tokenExpiry));
   if (!token || !expiry || Date.now() > expiry) {
     return null;
   }
@@ -253,8 +253,8 @@ async function login() {
   const challenge = await generateCodeChallenge(verifier);
   const oauthState = randomString(24);
 
-  sessionStorage.setItem(STORAGE.verifier, verifier);
-  sessionStorage.setItem(STORAGE.state, oauthState);
+  localStorage.setItem(STORAGE.verifier, verifier);
+  localStorage.setItem(STORAGE.state, oauthState);
 
   const params = new URLSearchParams({
     response_type: "code",
@@ -270,8 +270,8 @@ async function login() {
 }
 
 async function exchangeCodeForToken(code) {
-  const verifier = sessionStorage.getItem(STORAGE.verifier);
-  const savedState = sessionStorage.getItem(STORAGE.state);
+  const verifier = localStorage.getItem(STORAGE.verifier);
+  const savedState = localStorage.getItem(STORAGE.state);
   const params = new URLSearchParams(window.location.search);
   const incomingState = params.get("state");
 
@@ -299,8 +299,10 @@ async function exchangeCodeForToken(code) {
 
   const tokenData = await tokenResponse.json();
   const expiresAt = Date.now() + tokenData.expires_in * 1000 - 15000;
-  sessionStorage.setItem(STORAGE.token, tokenData.access_token);
-  sessionStorage.setItem(STORAGE.tokenExpiry, String(expiresAt));
+  localStorage.setItem(STORAGE.token, tokenData.access_token);
+  localStorage.setItem(STORAGE.tokenExpiry, String(expiresAt));
+  localStorage.removeItem(STORAGE.verifier);
+  localStorage.removeItem(STORAGE.state);
 
   window.history.replaceState({}, document.title, REDIRECT_URI);
 
