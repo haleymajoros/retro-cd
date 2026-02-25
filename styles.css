@@ -188,22 +188,15 @@ button:disabled {
   flex: 1;
   border: 3px solid var(--ink);
   border-radius: 12px;
-  height: 62px;
+  height: 40px;
   display: grid;
   place-items: center;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   font-size: 0.73rem;
   font-weight: 700;
-  background:
-    repeating-linear-gradient(
-      90deg,
-      rgba(0, 0, 0, 0.04),
-      rgba(0, 0, 0, 0.04) 8px,
-      rgba(255, 255, 255, 0.22) 8px,
-      rgba(255, 255, 255, 0.22) 16px
-    ),
-    linear-gradient(180deg, #c8c8c8, #a8a8a8);
+  color: #ffffff;
+  background: #000000;
   transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
 }
 

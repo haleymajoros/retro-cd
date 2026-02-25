@@ -46,6 +46,7 @@ const state = {
   currentTrackIdx: 0,
   isPlaying: false,
   isStopped: true,
+  controlBusy: false,
   playbackPoll: null,
   trackElapsedMs: 0,
   spinAudio: null,
@@ -467,9 +468,6 @@ async function ensureDeviceReady(timeoutMs = 3200) {
     return;
   }
 
-  if (state.player && typeof state.player.connect === "function") {
-    await state.player.connect().catch(() => {});
-  }
   await primeWebPlayerElement().catch(() => {});
 
   const started = Date.now();
@@ -507,7 +505,6 @@ function createPlayer() {
   player.addListener("ready", async ({ device_id: deviceId }) => {
     state.deviceId = deviceId;
     state.sdkConnected = true;
-    await transferPlaybackToDevice();
     setLcd("READY", "TRK --", "--:--", "No CD inserted", "Search and insert a CD");
   });
 
@@ -639,16 +636,10 @@ async function insertAlbum(albumId) {
     `TRK ${String(state.currentTrackIdx + 1).padStart(2, "0")}`,
     "00:00",
     state.currentAlbum.name,
-    state.currentAlbum.artist
+    `${state.currentAlbum.artist} - Press Play`
   );
   playUiSound("insert");
 
-  try {
-    await playFromCurrentPosition(true);
-  } catch (error) {
-    // Keep album inserted even if autoplay fails; allow manual Play fallback.
-    setLcd("LOAD", "TRK 01", "00:00", state.currentAlbum.name, "Inserted. Press Play if autoplay fails.");
-  }
   startPlaybackPolling();
 }
 
@@ -656,15 +647,13 @@ async function playFromCurrentPosition(forceTrackOne = false) {
   if (!state.currentAlbum) {
     return;
   }
-  await ensureDeviceReady();
+  await ensureDeviceReady(900);
 
   const offset = state.currentTrackIdx;
   const positionMs = forceTrackOne ? 0 : state.trackElapsedMs;
   const query = new URLSearchParams({ device_id: state.deviceId });
 
   await primeWebPlayerElement();
-  await transferPlaybackToDevice();
-  await sleep(180);
 
   const body = JSON.stringify({
     context_uri: state.currentAlbum.uri,
@@ -678,9 +667,9 @@ async function playFromCurrentPosition(forceTrackOne = false) {
       body
     });
   } catch (error) {
-    await sleep(260);
+    // If the device is not currently active, transfer once then retry.
     await transferPlaybackToDevice();
-    await sleep(220);
+    await sleep(60);
     await spotifyFetch(`/me/player/play?${query.toString()}`, {
       method: "PUT",
       body
@@ -693,65 +682,20 @@ async function playFromCurrentPosition(forceTrackOne = false) {
   updatePlayPauseButton();
 }
 
-async function resumeOnCurrentDevice() {
-  await ensureDeviceReady();
-  const query = new URLSearchParams({ device_id: state.deviceId });
-  await spotifyFetch(`/me/player/play?${query.toString()}`, { method: "PUT" });
-  state.isPlaying = true;
-  state.isStopped = false;
-  updateDiscVisuals(true);
-  updatePlayPauseButton();
-}
-
 async function pauseOnCurrentDevice() {
-  await ensureDeviceReady();
-
   try {
-    await spotifyFetch(`/me/player/pause?device_id=${encodeURIComponent(state.deviceId)}`, { method: "PUT" });
-  } catch (error) {
     if (state.player && typeof state.player.pause === "function") {
-      await state.player.pause().catch(() => {});
+      await state.player.pause();
     } else {
-      throw error;
+      throw new Error("SDK pause unavailable");
     }
+  } catch (error) {
+    await ensureDeviceReady(1200);
+    await spotifyFetch(`/me/player/pause?device_id=${encodeURIComponent(state.deviceId)}`, { method: "PUT" });
   }
 
   state.isPlaying = false;
   updateDiscVisuals(false);
-  updatePlayPauseButton();
-}
-
-async function forceStartCurrentAlbum() {
-  await ensureDeviceReady();
-  await primeWebPlayerElement();
-  await transferPlaybackToDevice();
-  await sleep(180);
-
-  const offset = state.currentTrackIdx;
-  const query = new URLSearchParams({ device_id: state.deviceId });
-  const body = JSON.stringify({
-    context_uri: state.currentAlbum.uri,
-    offset: { position: offset },
-    position_ms: 0
-  });
-
-  try {
-    await spotifyFetch(`/me/player/play?${query.toString()}`, { method: "PUT", body });
-  } catch (firstError) {
-    try {
-      await spotifyFetch("/me/player/play", { method: "PUT", body });
-    } catch (secondError) {
-      if (state.player && typeof state.player.resume === "function") {
-        await state.player.resume().catch(() => {});
-      } else {
-        throw secondError;
-      }
-    }
-  }
-
-  state.isPlaying = true;
-  state.isStopped = false;
-  updateDiscVisuals(true);
   updatePlayPauseButton();
 }
 
@@ -762,29 +706,24 @@ async function handleControl(action) {
 
   if (action === "play") {
     if (state.isPlaying) {
-      state.isPlaying = false;
-      updateDiscVisuals(false);
-      updatePlayPauseButton();
-      await pauseOnCurrentDevice().catch(() => {});
+      await pauseOnCurrentDevice();
       return;
     }
 
-    state.isPlaying = true;
-    updateDiscVisuals(true);
-    updatePlayPauseButton();
-
-    try {
-      await forceStartCurrentAlbum();
-    } catch (error) {
+    if (!state.isStopped && state.player && typeof state.player.resume === "function") {
       try {
-        await playFromCurrentPosition(state.isStopped);
-      } catch (secondError) {
-        state.isPlaying = false;
-        updateDiscVisuals(false);
+        await primeWebPlayerElement();
+        await state.player.resume();
+        state.isPlaying = true;
+        updateDiscVisuals(true);
         updatePlayPauseButton();
-        throw secondError;
+        return;
+      } catch (error) {
+        // Fallback to Web API context play.
       }
     }
+
+    await playFromCurrentPosition(state.isStopped);
     return;
   }
 
@@ -945,11 +884,29 @@ function bindEvents() {
 
   ui.controls.forEach((button) => {
     button.addEventListener("click", async () => {
+      if (state.controlBusy) {
+        return;
+      }
+
+      state.controlBusy = true;
+      const wasDisabled = button.disabled;
+      button.disabled = true;
       try {
         await primeWebPlayerElement();
         await handleControl(button.dataset.action);
       } catch (error) {
         showToastError(error.message || "Control action failed");
+      } finally {
+        state.controlBusy = false;
+        if (state.currentAlbum) {
+          setControlsEnabled(true);
+          updatePlayPauseButton();
+        } else {
+          setControlsEnabled(false);
+        }
+        if (!wasDisabled && state.currentAlbum) {
+          button.disabled = false;
+        }
       }
     });
   });
